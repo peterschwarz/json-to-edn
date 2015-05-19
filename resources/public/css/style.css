@@ -1,0 +1,18 @@
+/* some style */
+
+.translation-ctrls {
+    padding-top: 1em;
+    width: 100%;
+}
+
+.translation-ctrls {
+    margin: 0 auto;
+    display: block;
+
+    width: 33%;
+}
+
+div.fill,
+pre.fill {
+    height: 100%;
+}
