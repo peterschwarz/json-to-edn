@@ -7,8 +7,12 @@
 
 (enable-console-print!)
 
+; utils
 (defn element-by-id [id]
   (. js/document (getElementById id)))
+
+(defn css-classes [& classes]
+  (clojure.string/join " " classes))
 
 (def ^:private sample-json-code "
 {
@@ -51,6 +55,9 @@
 (def edn->json-str (comp json-str edn->json))
 (def json->edn-str (comp edn-str json->edn))
 
+(def syntax-checkers {:edn safe-read
+                      :json safe-parse})
+
 (defonce app-state 
   (atom {:json {:code [sample-json-code]}
          :edn  {:code [(edn-str (json->edn sample-json-code))]}
@@ -83,9 +90,11 @@
             (recur)))
     om/IRender
     (render [_]
-      (let [source-code (first (:code source))]
+      (let [source-code (first (:code source))
+            syntax-checker (source-key syntax-checkers)]
         (dom/div #js {:className "col-xs-6"} 
-          (dom/h4 #js {:className "source-title"} (to-title source-key))
+          (dom/h4 #js {:className (css-classes "source-title" (if-not (syntax-checker source-code) "text-danger"))}
+            (to-title source-key))
           (if is-editor?
             (dom/textarea #js {:id (str "input-" (name source-key))
                      :key (name source-key)

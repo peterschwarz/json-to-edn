@@ -1,6 +1,7 @@
 (ns json-to-edn.core-test
   (:require [cljs.test :refer-macros [deftest testing is]]
-            [json-to-edn.core :refer [json->edn edn->json rows-needed to-title]]))
+            [json-to-edn.core :refer [json->edn edn->json rows-needed to-title
+                                      css-classes]]))
 
 (deftest test-json->edn
   (is (= {:foo true} (json->edn "{\"foo\": true}")))
@@ -38,3 +39,6 @@
 
 (deftest test-to-title
   (is (= "Test" (to-title :test))))
+
+(deftest test-css-classes 
+  (is (= "class1 class2" (css-classes "class1" "class2"))))
