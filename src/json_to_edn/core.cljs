@@ -61,7 +61,6 @@
 
 (defn handle-code-change [e source ch]
   (let [updated-code (.. e -target -value)]
-    (println "transacting" (.. e -target -id))
     (update-code! source updated-code)
     (put! ch updated-code)))
 
@@ -85,7 +84,6 @@
     om/IRender
     (render [_]
       (let [source-code (first (:code source))]
-        (println "Rendering" source-key)
         (dom/div #js {:className "col-xs-6"} 
           (dom/h4 #js {:className "source-title"} (to-title source-key))
           (if is-editor?
@@ -119,7 +117,6 @@
     (render-state [_ state]
       (let [{:keys [json-chan edn-chan]} state
             editor (first (:editor app))]
-        (println "rendering main - editor" editor)
         (dom/div #js {:className "container"}
           (dom/h2 nil "JSON <-> EDN")
           (dom/div #js {:className "row"}
