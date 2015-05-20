@@ -3,7 +3,7 @@
   (:require [om.core :as om]
             [om.dom :as dom]
             [cljs.core.async :refer [put! chan <!]]
-            [cljs.pprint :as pp]))
+            [clojure.string]))
 
 (enable-console-print!)
 
@@ -48,73 +48,65 @@
   (if edn
     (str edn)))
 
+(def edn->json-str (comp json-str edn->json))
+(def json->edn-str (comp edn-str json->edn))
+
+(defonce app-state 
+  (atom {:json {:code [sample-json-code]}
+         :edn  {:code [(edn-str (json->edn sample-json-code))]}
+         :editor [:json]}))
+
+(defn- update-code! [source updated-code]
+  (om/transact! source :code #(assoc % 0 updated-code)))
+
+(defn handle-code-change [e source ch]
+  (let [updated-code (.. e -target -value)]
+    (println "transacting" (.. e -target -id))
+    (update-code! source updated-code)
+    (put! ch updated-code)))
+
 (defn rows-needed [s]
   (.max js/Math (count (.split s "\n")) 5))
 
-(defonce app-state 
-  (atom {:json {:code sample-json-code}
-         :edn  {:code (str (json->edn sample-json-code))
-                :is-output? true}}))
-
-(defn handle-code-change [e source ch]
-  (when (not (:is-output? source))
-    (let [updated-code (.. e -target -value)]
-      (om/transact! source #(assoc % :code updated-code))
-      (put! ch updated-code))))
-
-(defn- to-title [k] (.toUpperCase (name k)))
-
-(defmulti display-code (fn [_ {:keys [is-output?]} _] (if is-output? :read-only :editor)))
-
-(defmethod display-code :read-only
-  [source-key source _]
-  (println "rendering, read-only" source-key)
-  (dom/pre #js {:className "fill"} (:code source)))
-
-(defmethod display-code :editor
-  [source-key source {:keys [translation-target]}]
-  (println "rendering, editor" source-key)
-  (dom/textarea #js {:id (str "input-" (name source-key))
-                     :key source-key
-                     :value (:code source)
-                     :className "form-control"
-                     :rows (str (rows-needed (:code source)))
-                     :onChange #(handle-code-change % source translation-target)}))
-
-(defmethod display-code :default [_ _ _] 
-  (dom/p #js {:className "bg-danger"} "Unknown display type"))
+(defn to-title [k] 
+  (clojure.string/capitalize (name k)))
 
 (defn source-code 
-  [source-key tranlation-fn translation-source translation-target]
-  (fn [source owner]
-    (reify
-      om/IWillMount
-      (will-mount [_]
-            (go-loop []
-              (let [new-source (<! translation-source)
-                    translated-src (tranlation-fn new-source)]
-                (when translated-src
-                  (om/transact! source #(assoc % :code translated-src))))
-              (recur)))
-      om/IRender
-      (render [_]
+  [{:keys [source is-editor?]} owner {:keys [source-key translation-fn translation-source translation-target]:as opts}]
+  (reify
+    om/IWillMount
+    (will-mount [_]
+          (go-loop []
+            (let [new-source (<! translation-source)
+                  translated-src (translation-fn new-source)]
+              (when translated-src
+                (update-code! source translated-src)))
+            (recur)))
+    om/IRender
+    (render [_]
+      (let [source-code (first (:code source))]
+        (println "Rendering" source-key)
         (dom/div #js {:className "col-xs-6"} 
-          (dom/h4 nil (to-title source-key))
-          (display-code source-key source {:translation-target translation-target}))))))
+          (dom/h4 #js {:className "source-title"} (to-title source-key))
+          (if is-editor?
+            (dom/textarea #js {:id (str "input-" (name source-key))
+                     :key (name source-key)
+                     :value source-code
+                     :className "form-control"
+                     :rows (str (rows-needed source-code))
+                     :onChange #(handle-code-change % source translation-target)})
+            (dom/pre #js {:className "fill"
+                          :key (name source-key)} source-code)))))))
 
 (defn- swapTranslation [e app]
-  (let [current-editor (if (get-in app [:json :is-output?]) :edn :json)
-        next-editor (if (= :json current-editor) :edn :json)]
-    (om/transact! app (fn [a]
-      (-> a
-        (assoc-in [current-editor :is-output?] true)
-        (assoc-in [next-editor :is-output?] false))))))
+  (let [next-editor (if (= (get-in app [:editor 0]) :json) :edn :json)]
+    (om/transact! app :editor #(assoc % 0 next-editor))))
 
 (defn controls [app owner]
   (om/component
     (dom/div #js {:className "translation-ctrls"}
       (dom/button #js {:className "btn btn-default btn-block"
-                       :onClick #(swapTranslation % app)} "<->"))))
+                       :onClick #(swapTranslation % app)} "swap!"))))
 
 (defn main [app owner]
   (reify
@@ -126,14 +118,27 @@
     om/IRenderState
     (render-state [_ state]
       (let [{:keys [json-chan edn-chan]} state
-            {:keys [json edn]} app]
+            editor (first (:editor app))]
+        (println "rendering main - editor" editor)
         (dom/div #js {:className "container"}
           (dom/h2 nil "JSON <-> EDN")
           (dom/div #js {:className "row"}
-            (om/build (source-code :json #(json-str (edn->json %)) 
-                                   edn-chan json-chan) json)
-            (om/build (source-code :edn #(edn-str (json->edn %)) 
-                                   json-chan edn-chan) (:edn app)))
+
+            (om/build source-code {:is-editor? (= editor :json)
+                                   :source (:json app)}
+              { :opts {
+                  :source-key :json
+                  :translation-fn edn->json-str
+                  :translation-source edn-chan
+                  :translation-target json-chan }})
+
+            (om/build source-code {:is-editor? (= editor :edn) 
+                                   :source (:edn app)}
+              { :opts {
+                  :source-key :edn 
+                  :translation-fn json->edn-str
+                  :translation-source json-chan
+                  :translation-target edn-chan }}))
           (dom/div #js {:className "row"}
             (om/build controls app)))))))
 

@@ -12,7 +12,7 @@
     width: 33%;
 }
 
-div.fill,
-pre.fill {
-    height: 100%;
+.source-title {
+    text-transform: uppercase;
 }
+
