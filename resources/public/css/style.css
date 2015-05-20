@@ -12,7 +12,18 @@
     width: 33%;
 }
 
+.source-header {
+    margin-bottom: 0.5em;
+}
+.source-header .badge {
+    background: #e74c3c;
+    cursor: default;
+}
+
 .source-title {
+    font-size: 19px;
+    font-weight: bold;
     text-transform: uppercase;
+    margin-right: 0.5em;
 }
 

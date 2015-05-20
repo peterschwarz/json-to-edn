@@ -23,11 +23,14 @@
 }
 ")
 
-(defn- safe-parse [json-str]
+(defn- parse-json [json-str]
   (try
-    (.parse js/JSON json-str)
+    [(.parse js/JSON json-str), nil]
     (catch js/SyntaxError e
-      nil)))
+      [nil, e])))
+
+(def safe-parse (comp first parse-json))
+(def json-syntax-checker (comp second parse-json))
 
 (defn json->edn [json]
   (let [obj (if (string? json) (safe-parse json) json)]
@@ -38,11 +41,14 @@
   (if json
     (.stringify js/JSON json nil 2)) )
 
-(defn- safe-read [edn-str]
+(defn- parse-edn [edn-str]
   (try 
-    (cljs.reader/read-string edn-str)
+    [(cljs.reader/read-string edn-str) nil]
     (catch :default e
-      nil)))
+      [nil e])))
+
+(def safe-read (comp first parse-edn))
+(def edn-syntax-checker (comp second parse-edn))
 
 (defn edn->json [edn]
   (let [c (if (string? edn) (safe-read edn) edn)]
@@ -55,8 +61,8 @@
 (def edn->json-str (comp json-str edn->json))
 (def json->edn-str (comp edn-str json->edn))
 
-(def syntax-checkers {:edn safe-read
-                      :json safe-parse})
+(def syntax-checkers {:edn edn-syntax-checker
+                      :json json-syntax-checker})
 
 (defonce app-state 
   (atom {:json {:code [sample-json-code]}
@@ -77,6 +83,16 @@
 (defn to-title [k] 
   (clojure.string/capitalize (name k)))
 
+(defn code-title [source owner {:keys [source-key]}]
+  (om/component
+    (let [source-code (first (:code source))
+          syntax-checker (source-key syntax-checkers)
+          syntax-error (syntax-checker source-code)]
+      (dom/div #js {:className "source-header"}
+        (dom/span #js {:className (css-classes "source-title" (if syntax-error "text-danger"))} 
+          (to-title source-key))
+          (if syntax-error (dom/span #js {:className "badge"} "!"))))))
+
 (defn source-code 
   [{:keys [source is-editor?]} owner {:keys [source-key translation-fn translation-source translation-target]:as opts}]
   (reify
@@ -90,11 +106,9 @@
             (recur)))
     om/IRender
     (render [_]
-      (let [source-code (first (:code source))
-            syntax-checker (source-key syntax-checkers)]
+      (let [source-code (first (:code source))]
         (dom/div #js {:className "col-xs-6"} 
-          (dom/h4 #js {:className (css-classes "source-title" (if-not (syntax-checker source-code) "text-danger"))}
-            (to-title source-key))
+          (om/build code-title source {:opts {:source-key source-key}})
           (if is-editor?
             (dom/textarea #js {:id (str "input-" (name source-key))
                      :key (name source-key)
