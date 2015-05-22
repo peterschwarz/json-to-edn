@@ -1,6 +1,6 @@
 (defproject json-to-edn "0.1.0-SNAPSHOT"
   :description "A Simple utility page for converting JSON to EDN, and back again."
-  :url "http://example.com/FIXME"
+  :url "http://peterschwarz.github.io/json-to-edn"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
 
