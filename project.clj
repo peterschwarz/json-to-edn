@@ -8,12 +8,12 @@
                  [org.clojure/clojurescript "0.0-3211"]
                  [org.clojure/core.async "0.1.346.0-17112a-alpha"]
                  [org.omcljs/om "0.8.8"]
-                 [fipp "0.6.1"]]
+                 [endophile "0.1.2"]]
 
   :plugins [[lein-cljsbuild "1.0.5"]
-            [lein-figwheel "0.3.1"]]
+            [lein-figwheel "0.3.3"]]
 
-  :profiles {:dev {:dependencies [[figwheel "0.3.1"]]}}
+  :profiles {:dev {:dependencies [[figwheel "0.3.3"]]}}
 
   :source-paths ["src"]
 

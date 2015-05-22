@@ -1,0 +1,1 @@
+A simple utillity for quickly converting [JSON](http://www.json.org/) to [EDN](https://github.com/edn-format/edn) and back again.  Handy when porting Javascript libraries to Clojurescript.  

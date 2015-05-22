@@ -27,3 +27,17 @@
     margin-right: 0.5em;
 }
 
+.footer {
+    margin-top: 2em; 
+    font-size: 12px;
+    color: #7b8a8b;;
+}
+
+.footer ul {
+    margin-left: 0;
+    padding-left: 0;
+}
+
+.footer li {
+    list-style: none;
+}

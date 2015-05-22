@@ -1,9 +1,11 @@
 (ns ^:figwheel-always json-to-edn.core
-  (:require-macros [cljs.core.async.macros :refer [go-loop]])
+  (:require-macros [cljs.core.async.macros :refer [go-loop]]
+                   [json-to-edn.core :refer [markdown->om]])
   (:require [om.core :as om]
             [om.dom :as dom]
             [cljs.core.async :refer [put! chan <!]]
-            [clojure.string]))
+            [clojure.string]
+            [cljs.reader]))
 
 (enable-console-print!)
 
@@ -66,7 +68,7 @@
 
 (defonce app-state 
   (atom {:json {:code [sample-json-code]}
-         :edn  {:code [(edn-str (json->edn sample-json-code))]}
+         :edn  {:code [(json->edn-str sample-json-code)]}
          :editor [:json]}))
 
 (defn- update-code! [source updated-code]
@@ -78,7 +80,7 @@
     (put! ch updated-code)))
 
 (defn rows-needed [s]
-  (.max js/Math (count (.split s "\n")) 5))
+  (.max js/Math (count (.split s "\n")) 10))
 
 (defn to-title [k] 
   (clojure.string/capitalize (name k)))
@@ -88,6 +90,7 @@
     (let [source-code (first (:code source))
           syntax-checker (source-key syntax-checkers)
           syntax-error (syntax-checker source-code)]
+      (println syntax-error)
       (dom/div #js {:className "source-header"}
         (dom/span #js {:className (css-classes "source-title" (if syntax-error "text-danger"))} 
           (to-title source-key))
@@ -107,7 +110,7 @@
     om/IRender
     (render [_]
       (let [source-code (first (:code source))]
-        (dom/div #js {:className "col-xs-6"} 
+        (dom/div #js {:className "col-md-6"} 
           (om/build code-title source {:opts {:source-key source-key}})
           (if is-editor?
             (dom/textarea #js {:id (str "input-" (name source-key))
@@ -142,6 +145,7 @@
             editor (first (:editor app))]
         (dom/div #js {:className "container"}
           (dom/h2 nil "JSON <-> EDN")
+          (markdown->om "resources/public/md/description.md" :container-opts #js {:className "row"})
           (dom/div #js {:className "row"}
 
             (om/build source-code {:is-editor? (= editor :json)
@@ -159,8 +163,9 @@
                   :translation-fn json->edn-str
                   :translation-source json-chan
                   :translation-target edn-chan }}))
-          (dom/div #js {:className "row"}
-            (om/build controls app)))))))
+          (dom/div  (clj->js {:className "row"})
+            (om/build controls app))
+          (markdown->om "resources/public/md/footer.md" :container-opts #js {:className "row footer"}))))))
 
 (when-let [target (element-by-id "app")]
   (om/root main app-state {:target target}))

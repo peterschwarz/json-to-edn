@@ -34,8 +34,8 @@
   )
 
 (deftest test-rows-needed
-  (is (= 5 (rows-needed "hello")))
-  (is (= 10 (rows-needed "h\ne\nl\nl\no\nW\no\nr\nl\nd"))))
+  (is (= 10 (rows-needed "hello")))
+  (is (= 11 (rows-needed "h\ne\nl\nl\no\nW\no\nr\nl\nd\n!"))))
 
 (deftest test-to-title
   (is (= "Test" (to-title :test))))
