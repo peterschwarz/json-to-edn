@@ -4,8 +4,8 @@
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
 
-  :dependencies [[org.clojure/clojure "1.6.0"]
-                 [org.clojure/clojurescript "0.0-3211"]
+  :dependencies [[org.clojure/clojure "1.7.0-RC1"]
+                 [org.clojure/clojurescript "0.0-3308"]
                  [org.clojure/core.async "0.1.346.0-17112a-alpha"]
                  [org.omcljs/om "0.8.8"]
                  [endophile "0.1.2"]]
@@ -20,7 +20,7 @@
   :clean-targets ^{:protect false} ["resources/public/js/compiled"
                                     "resources/public/js/test"
                                     "target"]
-  
+
   :cljsbuild {
     :builds [{:id "dev"
               :source-paths ["src"]
@@ -44,9 +44,9 @@
              {:id "min"
               :source-paths ["src"]
               :compiler {:output-to "resources/public/js/compiled/json_to_edn.js"
-                         :main json-to-edn.core                         
+                         :main json-to-edn.core
                          :optimizations :advanced
                          :pretty-print false}}]}
 
   :figwheel {
-    :css-dirs ["resources/public/css"] })
+    :css-dirs ["resources/public/css"]})
