@@ -5,7 +5,9 @@
             [om.dom :as dom]
             [cljs.core.async :refer [put! chan <!]]
             [clojure.string]
-            [cljs.reader]))
+            [cljs.reader]
+            [cljs.pprint :refer [write]])
+  (:import  [goog.string StringBuffer]))
 
 (enable-console-print!)
 
@@ -58,7 +60,11 @@
 
 (defn edn-str [edn]
   (if edn
-    (str edn)))
+    (let [sb (StringBuffer.)
+          writer (StringBufferWriter. sb)]
+      (write edn :pretty true :readably true :right-margin 48 :stream writer)
+      (println (.toString sb))
+      (.toString sb))))
 
 (def edn->json-str (comp json-str edn->json))
 (def json->edn-str (comp edn-str json->edn))
@@ -90,14 +96,13 @@
     (let [source-code (first (:code source))
           syntax-checker (source-key syntax-checkers)
           syntax-error (syntax-checker source-code)]
-      (println syntax-error)
       (dom/div #js {:className "source-header"}
         (dom/span #js {:className (css-classes "source-title" (if syntax-error "text-danger"))} 
           (to-title source-key))
           (if syntax-error (dom/span #js {:className "badge"} "!"))))))
 
 (defn source-code 
-  [{:keys [source is-editor?]} owner {:keys [source-key translation-fn translation-source translation-target]:as opts}]
+  [{:keys [source is-editor?]} owner {:keys [source-key translation-fn translation-source translation-target] :as opts}]
   (reify
     om/IWillMount
     (will-mount [_]
@@ -144,8 +149,9 @@
       (let [{:keys [json-chan edn-chan]} state
             editor (first (:editor app))]
         (dom/div #js {:className "container"}
-          (dom/h2 nil "JSON <-> EDN")
-          (markdown->om "resources/public/md/description.md" :container-opts #js {:className "row"})
+          (dom/h1 nil "JSON <-> EDN")
+          (markdown->om "resources/public/md/description.md"
+                        :container-opts #js {:className "row"})
           (dom/div #js {:className "row"}
 
             (om/build source-code {:is-editor? (= editor :json)
@@ -165,7 +171,8 @@
                   :translation-target edn-chan }}))
           (dom/div  (clj->js {:className "row"})
             (om/build controls app))
-          (markdown->om "resources/public/md/footer.md" :container-opts #js {:className "row footer"}))))))
+          (markdown->om "resources/public/md/footer.md"
+                        :container-opts #js {:className "row footer"}))))))
 
 (when-let [target (element-by-id "app")]
   (om/root main app-state {:target target}))
