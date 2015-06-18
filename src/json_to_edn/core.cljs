@@ -63,7 +63,6 @@
     (let [sb (StringBuffer.)
           writer (StringBufferWriter. sb)]
       (write edn :pretty true :readably true :right-margin 48 :stream writer)
-      (println (.toString sb))
       (.toString sb))))
 
 (def edn->json-str (comp json-str edn->json))
@@ -150,7 +149,7 @@
             editor (first (:editor app))]
         (dom/div #js {:className "container"}
           (dom/h1 nil "JSON <-> EDN")
-          (markdown->om "resources/public/md/description.md"
+          (markdown->om "resources/md/description.md"
                         :container-opts #js {:className "row"})
           (dom/div #js {:className "row"}
 
@@ -171,7 +170,7 @@
                   :translation-target edn-chan }}))
           (dom/div  (clj->js {:className "row"})
             (om/build controls app))
-          (markdown->om "resources/public/md/footer.md"
+          (markdown->om "resources/md/footer.md"
                         :container-opts #js {:className "row footer"}))))))
 
 (when-let [target (element-by-id "app")]
