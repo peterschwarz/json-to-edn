@@ -1,6 +1,6 @@
 # JSON <-> EDN Converter
 
-Written in pure Clojurescript
+Written in Clojurescript for [Clojure.MN](http://clojure.mn).
 
 See it in action [here](https://peterschwarz.github.io/json-to-edn)
 
